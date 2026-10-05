@@ -1,0 +1,43 @@
+CREATE SCHEMA IF NOT EXISTS "public";
+CREATE TYPE "Role" AS ENUM ('SUPER_ADMIN', 'ADMIN', 'MACHINERY_OWNER', 'FARMER', 'SUPPORT_AGENT');
+CREATE TYPE "VerificationStatus" AS ENUM ('UNVERIFIED', 'PENDING', 'VERIFIED', 'REJECTED');
+CREATE TYPE "MachineryCondition" AS ENUM ('NEW', 'VERY_GOOD', 'GOOD', 'FAIR', 'NEEDS_MAINTENANCE');
+CREATE TYPE "PricingType" AS ENUM ('HOURLY', 'DAILY', 'PER_HECTARE', 'PER_DUNUM', 'PER_JOB', 'NEGOTIABLE');
+CREATE TYPE "AvailabilityStatus" AS ENUM ('AVAILABLE', 'BUSY', 'UNAVAILABLE');
+CREATE TYPE "ApprovalStatus" AS ENUM ('PENDING', 'APPROVED', 'REJECTED', 'CHANGES_REQUESTED');
+CREATE TYPE "BookingStatus" AS ENUM ('PENDING', 'ACCEPTED', 'REJECTED', 'CANCELLED', 'COMPLETED');
+
+CREATE TABLE "User" ("id" TEXT NOT NULL, "name" TEXT NOT NULL, "phone" TEXT NOT NULL, "email" TEXT, "passwordHash" TEXT NOT NULL, "role" "Role" NOT NULL DEFAULT 'FARMER', "active" BOOLEAN NOT NULL DEFAULT true, "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, "updatedAt" TIMESTAMP(3) NOT NULL, CONSTRAINT "User_pkey" PRIMARY KEY ("id"));
+CREATE TABLE "OwnerProfile" ("id" TEXT NOT NULL, "userId" TEXT NOT NULL, "businessName" TEXT, "verificationStatus" "VerificationStatus" NOT NULL DEFAULT 'UNVERIFIED', "canTravelDefault" BOOLEAN NOT NULL DEFAULT false, "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, "updatedAt" TIMESTAMP(3) NOT NULL, CONSTRAINT "OwnerProfile_pkey" PRIMARY KEY ("id"));
+CREATE TABLE "Location" ("id" TEXT NOT NULL, "nameAr" TEXT NOT NULL, "nameEn" TEXT, "slug" TEXT NOT NULL, "type" TEXT NOT NULL, "parentId" TEXT, "active" BOOLEAN NOT NULL DEFAULT true, "sortOrder" INTEGER NOT NULL DEFAULT 0, CONSTRAINT "Location_pkey" PRIMARY KEY ("id"));
+CREATE TABLE "Category" ("id" TEXT NOT NULL, "nameAr" TEXT NOT NULL, "nameEn" TEXT, "slug" TEXT NOT NULL, "icon" TEXT, "description" TEXT, "active" BOOLEAN NOT NULL DEFAULT true, "sortOrder" INTEGER NOT NULL DEFAULT 0, "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, "updatedAt" TIMESTAMP(3) NOT NULL, CONSTRAINT "Category_pkey" PRIMARY KEY ("id"));
+CREATE TABLE "Machinery" ("id" TEXT NOT NULL, "ownerId" TEXT NOT NULL, "categoryId" TEXT NOT NULL, "title" TEXT NOT NULL, "slug" TEXT NOT NULL, "description" TEXT NOT NULL, "brand" TEXT, "model" TEXT, "manufactureYear" INTEGER, "horsePower" INTEGER, "condition" "MachineryCondition" NOT NULL DEFAULT 'GOOD', "pricingType" "PricingType" NOT NULL, "price" INTEGER, "currency" TEXT NOT NULL DEFAULT 'SYP', "locationId" TEXT NOT NULL, "canTravel" BOOLEAN NOT NULL DEFAULT false, "serviceRadiusKm" INTEGER, "availabilityStatus" "AvailabilityStatus" NOT NULL DEFAULT 'AVAILABLE', "approvalStatus" "ApprovalStatus" NOT NULL DEFAULT 'PENDING', "rejectionReason" TEXT, "featured" BOOLEAN NOT NULL DEFAULT false, "featuredUntil" TIMESTAMP(3), "active" BOOLEAN NOT NULL DEFAULT true, "averageRating" DOUBLE PRECISION NOT NULL DEFAULT 0, "reviewCount" INTEGER NOT NULL DEFAULT 0, "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, "updatedAt" TIMESTAMP(3) NOT NULL, CONSTRAINT "Machinery_pkey" PRIMARY KEY ("id"));
+CREATE TABLE "MachineryImage" ("id" TEXT NOT NULL, "machineryId" TEXT NOT NULL, "url" TEXT NOT NULL, "thumbnailUrl" TEXT, "sortOrder" INTEGER NOT NULL DEFAULT 0, "isPrimary" BOOLEAN NOT NULL DEFAULT false, CONSTRAINT "MachineryImage_pkey" PRIMARY KEY ("id"));
+CREATE TABLE "Booking" ("id" TEXT NOT NULL, "machineryId" TEXT NOT NULL, "farmerId" TEXT NOT NULL, "startDate" TIMESTAMP(3) NOT NULL, "endDate" TIMESTAMP(3) NOT NULL, "status" "BookingStatus" NOT NULL DEFAULT 'PENDING', "notes" TEXT, "quotedPrice" INTEGER, "finalPrice" INTEGER, "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, "updatedAt" TIMESTAMP(3) NOT NULL, CONSTRAINT "Booking_pkey" PRIMARY KEY ("id"));
+CREATE TABLE "Review" ("id" TEXT NOT NULL, "bookingId" TEXT NOT NULL, "machineryId" TEXT NOT NULL, "farmerId" TEXT NOT NULL, "rating" INTEGER NOT NULL, "comment" TEXT, "hidden" BOOLEAN NOT NULL DEFAULT false, "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, CONSTRAINT "Review_pkey" PRIMARY KEY ("id"));
+CREATE TABLE "Notification" ("id" TEXT NOT NULL, "userId" TEXT NOT NULL, "title" TEXT NOT NULL, "body" TEXT NOT NULL, "read" BOOLEAN NOT NULL DEFAULT false, "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, CONSTRAINT "Notification_pkey" PRIMARY KEY ("id"));
+CREATE TABLE "InteractionEvent" ("id" TEXT NOT NULL, "machineryId" TEXT, "type" TEXT NOT NULL, "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, CONSTRAINT "InteractionEvent_pkey" PRIMARY KEY ("id"));
+CREATE TABLE "Setting" ("key" TEXT NOT NULL, "value" TEXT NOT NULL, "updatedAt" TIMESTAMP(3) NOT NULL, CONSTRAINT "Setting_pkey" PRIMARY KEY ("key"));
+
+CREATE UNIQUE INDEX "User_phone_key" ON "User"("phone");
+CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
+CREATE UNIQUE INDEX "OwnerProfile_userId_key" ON "OwnerProfile"("userId");
+CREATE UNIQUE INDEX "Location_slug_key" ON "Location"("slug");
+CREATE UNIQUE INDEX "Category_slug_key" ON "Category"("slug");
+CREATE UNIQUE INDEX "Machinery_slug_key" ON "Machinery"("slug");
+CREATE INDEX "Machinery_approvalStatus_active_availabilityStatus_idx" ON "Machinery"("approvalStatus", "active", "availabilityStatus");
+CREATE INDEX "Machinery_categoryId_locationId_idx" ON "Machinery"("categoryId", "locationId");
+CREATE INDEX "Booking_machineryId_startDate_endDate_status_idx" ON "Booking"("machineryId", "startDate", "endDate", "status");
+CREATE UNIQUE INDEX "Review_bookingId_key" ON "Review"("bookingId");
+
+ALTER TABLE "OwnerProfile" ADD CONSTRAINT "OwnerProfile_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Location" ADD CONSTRAINT "Location_parentId_fkey" FOREIGN KEY ("parentId") REFERENCES "Location"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "Machinery" ADD CONSTRAINT "Machinery_ownerId_fkey" FOREIGN KEY ("ownerId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Machinery" ADD CONSTRAINT "Machinery_categoryId_fkey" FOREIGN KEY ("categoryId") REFERENCES "Category"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Machinery" ADD CONSTRAINT "Machinery_locationId_fkey" FOREIGN KEY ("locationId") REFERENCES "Location"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "MachineryImage" ADD CONSTRAINT "MachineryImage_machineryId_fkey" FOREIGN KEY ("machineryId") REFERENCES "Machinery"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "Booking" ADD CONSTRAINT "Booking_machineryId_fkey" FOREIGN KEY ("machineryId") REFERENCES "Machinery"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Booking" ADD CONSTRAINT "Booking_farmerId_fkey" FOREIGN KEY ("farmerId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Review" ADD CONSTRAINT "Review_bookingId_fkey" FOREIGN KEY ("bookingId") REFERENCES "Booking"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Review" ADD CONSTRAINT "Review_machineryId_fkey" FOREIGN KEY ("machineryId") REFERENCES "Machinery"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Review" ADD CONSTRAINT "Review_farmerId_fkey" FOREIGN KEY ("farmerId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

@@ -1,0 +1,1 @@
+export default function Page(){return <main className="container max-w-3xl py-10"><h1 className="text-3xl font-extrabold">الشروط والأحكام</h1><p className="mt-4 text-[#647067]">استخدام وصلة يعني الالتزام بدقة البيانات واحترام الاتفاقات بين أصحاب الآليات والمستأجرين.</p></main>}

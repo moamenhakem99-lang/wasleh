@@ -1,0 +1,1 @@
+export default function Page(){return <main className="container max-w-3xl py-10"><h1 className="text-3xl font-extrabold">عن وصلة</h1><p className="mt-4 leading-8 text-[#647067]">وصلة منصة زراعية تبدأ بتأجير الآليات لتسهيل الوصول إلى الجرارات والمعدات خلال المواسم وتقليل الاعتماد على الوسطاء.</p></main>}

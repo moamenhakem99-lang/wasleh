@@ -1,0 +1,1 @@
+export default function Page(){return <main className="container max-w-3xl py-10"><h1 className="text-3xl font-extrabold">سياسة الخصوصية</h1><p className="mt-4 text-[#647067]">نحفظ أقل قدر لازم من البيانات لتشغيل marketplace الآليات ولا نعرض بيانات خاصة إلا بالقدر اللازم للتواصل.</p></main>}

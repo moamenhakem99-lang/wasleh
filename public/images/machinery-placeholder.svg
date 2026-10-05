@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 560">
+  <rect width="900" height="560" fill="#EFF7EE"/>
+  <path d="M0 402c150-64 274-70 430-19 168 55 309 42 470-18v195H0z" fill="#DDEDD9"/>
+  <circle cx="310" cy="365" r="70" fill="#17251D"/>
+  <circle cx="310" cy="365" r="34" fill="#E5A817"/>
+  <circle cx="610" cy="382" r="48" fill="#17251D"/>
+  <circle cx="610" cy="382" r="22" fill="#E5A817"/>
+  <path d="M214 322h210l56-105h116l76 118h68v44H199z" fill="#0B5D3B"/>
+  <path d="M482 235h91l45 70H445z" fill="#9BD91C"/>
+  <path d="M224 300h126l34-70H250z" fill="#178A45"/>
+  <text x="450" y="120" text-anchor="middle" font-size="44" font-family="Tahoma, Arial" font-weight="700" fill="#0B5D3B">آلية زراعية</text>
+</svg>

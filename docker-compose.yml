@@ -1,0 +1,41 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: wasla
+      POSTGRES_PASSWORD: wasla
+      POSTGRES_DB: wasla
+    ports:
+      - "5432:5432"
+    volumes:
+      - wasla_postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U wasla -d wasla"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  app:
+    build: .
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://wasla:wasla@postgres:5432/wasla?schema=public
+      JWT_SECRET: change-me-access-secret
+      JWT_REFRESH_SECRET: change-me-refresh-secret
+      NEXT_PUBLIC_API_URL: http://localhost:3000/api/v1
+      FRONTEND_URL: http://localhost:3000
+      DEFAULT_CURRENCY: SYP
+      UPLOAD_DIR: /app/uploads
+    volumes:
+      - wasla_uploads:/app/uploads
+    ports:
+      - "3000:3000"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/v1/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+volumes:
+  wasla_postgres:
+  wasla_uploads:

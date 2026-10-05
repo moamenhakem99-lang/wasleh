@@ -1,0 +1,235 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  SUPER_ADMIN
+  ADMIN
+  MACHINERY_OWNER
+  FARMER
+  SUPPORT_AGENT
+}
+
+enum VerificationStatus {
+  UNVERIFIED
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum MachineryCondition {
+  NEW
+  VERY_GOOD
+  GOOD
+  FAIR
+  NEEDS_MAINTENANCE
+}
+
+enum PricingType {
+  HOURLY
+  DAILY
+  PER_HECTARE
+  PER_DUNUM
+  PER_JOB
+  NEGOTIABLE
+}
+
+enum AvailabilityStatus {
+  AVAILABLE
+  BUSY
+  UNAVAILABLE
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CHANGES_REQUESTED
+}
+
+enum BookingStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  CANCELLED
+  COMPLETED
+}
+
+model User {
+  id           String    @id @default(cuid())
+  name         String
+  phone        String    @unique
+  email        String?   @unique
+  passwordHash String
+  role         Role      @default(FARMER)
+  active       Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  ownerProfile OwnerProfile?
+  uploads       Upload[]
+  machinery     Machinery[]
+  bookings      Booking[]  @relation("FarmerBookings")
+  reviews       Review[]
+}
+
+model OwnerProfile {
+  id                 String             @id @default(cuid())
+  userId             String             @unique
+  businessName       String?
+  verificationStatus VerificationStatus @default(UNVERIFIED)
+  canTravelDefault   Boolean            @default(false)
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  user               User               @relation(fields: [userId], references: [id])
+}
+
+model Location {
+  id        String     @id @default(cuid())
+  nameAr    String
+  nameEn    String?
+  slug      String     @unique
+  type      String
+  parentId  String?
+  active    Boolean    @default(true)
+  sortOrder Int        @default(0)
+  parent    Location?  @relation("LocationTree", fields: [parentId], references: [id])
+  children  Location[] @relation("LocationTree")
+  machinery Machinery[]
+}
+
+model Category {
+  id          String      @id @default(cuid())
+  nameAr      String
+  nameEn      String?
+  slug        String      @unique
+  icon        String?
+  description String?
+  active      Boolean     @default(true)
+  sortOrder   Int         @default(0)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  machinery   Machinery[]
+}
+
+model Machinery {
+  id                 String             @id @default(cuid())
+  ownerId            String
+  categoryId         String
+  title              String
+  slug               String             @unique
+  description        String
+  brand              String?
+  model              String?
+  manufactureYear    Int?
+  horsePower         Int?
+  condition          MachineryCondition @default(GOOD)
+  pricingType        PricingType
+  price              Int?
+  currency           String             @default("SYP")
+  locationId         String
+  canTravel          Boolean            @default(false)
+  serviceRadiusKm    Int?
+  availabilityStatus AvailabilityStatus @default(AVAILABLE)
+  approvalStatus     ApprovalStatus     @default(PENDING)
+  rejectionReason    String?
+  featured           Boolean            @default(false)
+  featuredUntil      DateTime?
+  active             Boolean            @default(true)
+  averageRating      Float              @default(0)
+  reviewCount        Int                @default(0)
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  owner              User               @relation(fields: [ownerId], references: [id])
+  category           Category           @relation(fields: [categoryId], references: [id])
+  location           Location           @relation(fields: [locationId], references: [id])
+  images             MachineryImage[]
+  uploads            Upload[]
+  bookings           Booking[]
+  reviews            Review[]
+
+  @@index([approvalStatus, active, availabilityStatus])
+  @@index([categoryId, locationId])
+}
+
+model MachineryImage {
+  id           String    @id @default(cuid())
+  machineryId  String
+  url          String
+  thumbnailUrl String?
+  sortOrder    Int       @default(0)
+  isPrimary    Boolean   @default(false)
+  machinery    Machinery @relation(fields: [machineryId], references: [id], onDelete: Cascade)
+}
+
+model Upload {
+  id          String    @id @default(uuid())
+  userId      String
+  machineryId String?
+  createdAt   DateTime  @default(now())
+  user        User      @relation(fields: [userId], references: [id])
+  machinery   Machinery? @relation(fields: [machineryId], references: [id], onDelete: SetNull)
+
+  @@index([userId, machineryId])
+}
+
+model Booking {
+  id          String        @id @default(cuid())
+  machineryId String
+  farmerId    String
+  startDate   DateTime
+  endDate     DateTime
+  status      BookingStatus @default(PENDING)
+  notes       String?
+  quotedPrice Int?
+  finalPrice  Int?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  machinery   Machinery     @relation(fields: [machineryId], references: [id])
+  farmer      User          @relation("FarmerBookings", fields: [farmerId], references: [id])
+  review      Review?
+
+  @@index([machineryId, startDate, endDate, status])
+}
+
+model Review {
+  id          String    @id @default(cuid())
+  bookingId   String    @unique
+  machineryId String
+  farmerId    String
+  rating      Int
+  comment     String?
+  hidden      Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  booking     Booking   @relation(fields: [bookingId], references: [id])
+  machinery   Machinery @relation(fields: [machineryId], references: [id])
+  farmer      User      @relation(fields: [farmerId], references: [id])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  body      String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model InteractionEvent {
+  id          String   @id @default(cuid())
+  machineryId String?
+  type        String
+  createdAt   DateTime @default(now())
+}
+
+model Setting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}

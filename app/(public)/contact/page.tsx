@@ -1,0 +1,1 @@
+export default function Page(){return <main className="container max-w-2xl py-10"><h1 className="text-3xl font-extrabold">تواصل معنا</h1><div className="card mt-5 p-5"><p>الهاتف: +963900000000</p><p>البريد: support@wasla.local</p></div></main>}

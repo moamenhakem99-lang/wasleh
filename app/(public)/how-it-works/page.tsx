@@ -1,0 +1,1 @@
+export default function Page(){return <main className="container py-10"><h1 className="text-3xl font-extrabold">كيف تعمل وصلة</h1><div className="mt-6 grid-auto">{["ابحث عن الآلية","قارن الخيارات","احجز أو تواصل","قيّم الخدمة"].map((x,i)=><div className="card p-5" key={x}><b>{i+1}. {x}</b></div>)}</div></main>}
